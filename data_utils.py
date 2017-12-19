@@ -54,6 +54,13 @@ def sliding_window_with_coords(image, stride=10, window_size=(20,20)):
             new_patch = image[x:x + window_size[0], y:y + window_size[1]]
             if new_patch.shape[:2] == window_size:
                 patches.append((x, y, window_size[0], window_size[1], new_patch))
+
+    # patches from the end upfront
+    # for x in range(image.shape[0] - 1, -1, -stride):
+    #     for y in range(image.shape[1] - 1, -1, -stride):
+    #         new_patch = image[x - window_size[0]:x, y - window_size[1]:y]
+    #         if new_patch.shape[:2] == window_size:
+    #             patches.append((x - window_size[0], y - window_size[1], window_size[0], window_size[1], new_patch))
     return patches
 
 
@@ -72,14 +79,21 @@ def predict_mask_from_patches(model, image, stride, patch_size, X_mean, X_std, r
     prediction_mask = votes / patches_count
 
     print('prediction_mask shape = ', prediction_mask.shape)
+
     # resize image
     prediction_mask_resized = resize(prediction_mask, (rows, cols))
 
-    prediction_mask_resized = np.argmax(prediction_mask_resized, axis=2)
-    prediction_mask_resized[prediction_mask_resized == 1] = 127
-    prediction_mask_resized[prediction_mask_resized == 2] = 255
+    prediction_mask_resized = from_probs_to_class(prediction_mask_resized)
+    prediction_mask = from_probs_to_class(prediction_mask)
 
-    return prediction_mask_resized
+    return prediction_mask, prediction_mask_resized
+
+def from_probs_to_class(y):
+    y = np.argmax(y, axis=2)
+    y[y == 1] = 127
+    y[y == 2] = 255
+    return y
+
 
 
 def sliding_window(image, stride=10, window_size=(20,20)):
@@ -100,6 +114,14 @@ def sliding_window(image, stride=10, window_size=(20,20)):
             new_patch = image[x:x + window_size[0], y:y + window_size[1]]
             if new_patch.shape[:2] == window_size:
                 patches.append(new_patch)
+
+    # patches from the end upfront
+    for x in range(image.shape[0] - 1, -1, -stride):
+        for y in range(image.shape[1] - 1, -1, -stride):
+            new_patch = image[x - window_size[0]:x, y - window_size[1]:y]
+            if new_patch.shape[:2] == window_size:
+                patches.append(new_patch)
+
     return patches
 
 def transform(patch, flip=False, mirror=False, rotations=[]):

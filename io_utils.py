@@ -19,9 +19,10 @@ TEST_DIR = os.path.join(DATASET_DIR, '02_test_clean')
 TEST_IDX_FILE = os.path.join(TEST_DIR, 'idx-test.txt')
 
 PATCH_SIZE = 224
-STRIDE = PATCH_SIZE * 1 // 4
+STRIDE = PATCH_SIZE * 3 // 4
 FLIP = True
 MIRROR = True
+# ROTATIONS = []
 ROTATIONS = [90, 180, 270]
 
 def read_train_dataset():
@@ -69,12 +70,14 @@ def read_test_dataset_and_predict(model, X_mean, X_std):
     for path_img, rows, cols in tqdm(zip(df['path_img'], df['out_rows'], df['out_cols'])):
         abs_path_img = os.path.join(TEST_DIR, path_img)
         test_img = skio.imread(abs_path_img)
-        mask = predict_mask_from_patches(model, test_img, STRIDE, (PATCH_SIZE, PATCH_SIZE), X_mean, X_std, rows, cols)
-        path_fake_mask = os.path.join(TEST_DIR, path_img.replace('.png', '_msk_fake.png'))
-        skio.imsave(path_fake_mask, mask)
+        mask, mask_resized = predict_mask_from_patches(model, test_img, STRIDE, (PATCH_SIZE, PATCH_SIZE), X_mean, X_std, rows, cols)
+        path_mask = os.path.join(TEST_DIR, path_img.replace('.png', '_msk.png'))
+        skio.imsave(path_mask, mask)
+        path_resized_mask = os.path.join(TEST_DIR, path_img.replace('.png', '_msk_resized.png'))
+        skio.imsave(path_resized_mask, mask_resized)
 
         file_id = os.path.splitext(os.path.basename(abs_path_img))[0]
-        mask_flatten = mask.flatten()
+        mask_flatten = mask_resized.flatten()
         lst_idx += ['{}_{}'.format(file_id, xx) for xx in range(mask_flatten.shape[0])]
         if lst_lbl is None:
             lst_lbl = mask_flatten
