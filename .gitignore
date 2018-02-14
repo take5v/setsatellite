@@ -3,3 +3,7 @@
 __pycache__/
 .vscode/
 *.pyc
+models/
+models_2/
+logs/
+logs_2/
